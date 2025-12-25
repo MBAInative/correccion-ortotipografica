@@ -288,7 +288,7 @@ def apply_corrections():
                     📄 {output_filename}
                 </div>
                 
-                <a href="/download/{output_filename}" class="btn" download>
+                <a href="/descargar?archivo={output_filename}" class="btn">
                     ⬇️ Descargar Documento
                 </a>
                 
@@ -310,20 +310,29 @@ def apply_corrections():
         traceback.print_exc()
         return f"Error al aplicar correcciones: {str(e)}", 500
 
-@app.route('/download/<filename>')
-def download_file(filename):
+@app.route('/descargar')
+def descargar_archivo():
     """Endpoint para descargar el archivo corregido."""
     try:
+        filename = request.args.get('archivo')
+        if not filename:
+            return "Nombre de archivo no especificado", 400
+        
         file_path = Path(app.config['OUTPUT_FOLDER']) / filename
         if not file_path.exists():
             return "Archivo no encontrado", 404
         
-        return send_file(
+        # Forzar nombre correcto con extensión
+        response = make_response(send_file(
             str(file_path.absolute()),
-            as_attachment=True,
-            download_name=filename,
             mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
+        ))
+        
+        # Asegurar nombre correcto con extensión .docx
+        safe_name = filename.replace('"', '').replace("'", "")
+        response.headers['Content-Disposition'] = f'attachment; filename="{safe_name}"'
+        
+        return response
     except Exception as e:
         return f"Error al descargar: {str(e)}", 500
 

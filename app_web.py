@@ -206,35 +206,126 @@ def apply_corrections():
         aplicador = AplicadorCorrecciones()
         aplicador.aplicar_correcciones(filepath, str(output_path), correcciones_aprobadas)
         
-        # Limpiar archivos temporales
+        # Limpiar archivos temporales de entrada
         try:
             os.remove(filepath)
             os.remove(session_file)
         except:
             pass
         
-        # Descargar archivo directamente al PC del usuario
-        # Usar nombre simple sin caracteres especiales para evitar problemas
-        safe_filename = output_filename.encode('ascii', 'ignore').decode('ascii')
-        if not safe_filename:
-            safe_filename = 'documento_corregido.docx'
-        
-        response = make_response(send_file(
-            str(output_path.absolute()),
-            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ))
-        
-        # Configurar header de descarga con nombre correcto
-        response.headers['Content-Disposition'] = f'attachment; filename="{safe_filename}"; filename*=UTF-8\'\'\'{output_filename}'
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        
-        return response
+        # Mostrar página de éxito con enlace de descarga
+        return f"""
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Corrección Completada</title>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                }}
+                .success-box {{
+                    background: white;
+                    border-radius: 20px;
+                    padding: 40px;
+                    max-width: 600px;
+                    text-align: center;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                }}
+                .check {{ font-size: 80px; color: #28a745; margin-bottom: 20px; }}
+                h1 {{ color: #333; margin-bottom: 20px; }}
+                .file-name {{
+                    background: #f5f5f5;
+                    padding: 15px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                    font-family: monospace;
+                    color: #667eea;
+                    font-weight: bold;
+                    word-break: break-all;
+                }}
+                .btn {{
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    padding: 20px 50px;
+                    border: none;
+                    border-radius: 30px;
+                    font-size: 1.2em;
+                    cursor: pointer;
+                    text-decoration: none;
+                    display: inline-block;
+                    margin: 20px 10px;
+                    transition: transform 0.2s;
+                }}
+                .btn:hover {{
+                    transform: scale(1.05);
+                }}
+                .btn-secondary {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 15px 40px;
+                    font-size: 1em;
+                }}
+                .info {{
+                    color: #666;
+                    margin-top: 20px;
+                    font-size: 0.9em;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="success-box">
+                <div class="check">✅</div>
+                <h1>¡Correcciones Aplicadas!</h1>
+                <p>Se aplicaron <strong>{len(correcciones_aprobadas)}</strong> correcciones con Track Changes.</p>
+                
+                <div class="file-name">
+                    📄 {output_filename}
+                </div>
+                
+                <a href="/download/{output_filename}" class="btn" download>
+                    ⬇️ Descargar Documento
+                </a>
+                
+                <br>
+                
+                <a href="/" class="btn btn-secondary">📝 Corregir Otro Documento</a>
+                
+                <div class="info">
+                    Las correcciones aparecen en <strong style="color: #0000FF;">azul</strong> en Word (Track Changes).
+                </div>
+            </div>
+        </body>
+        </html>
+        """
     
     except Exception as e:
         print(f"❌ Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return f"Error al aplicar correcciones: {str(e)}", 500
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    """Endpoint para descargar el archivo corregido."""
+    try:
+        file_path = Path(app.config['OUTPUT_FOLDER']) / filename
+        if not file_path.exists():
+            return "Archivo no encontrado", 404
+        
+        return send_file(
+            str(file_path.absolute()),
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+    except Exception as e:
+        return f"Error al descargar: {str(e)}", 500
 
 if __name__ == '__main__':
     print("\n" + "="*60)

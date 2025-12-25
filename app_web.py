@@ -206,91 +206,20 @@ def apply_corrections():
         aplicador = AplicadorCorrecciones()
         aplicador.aplicar_correcciones(filepath, str(output_path), correcciones_aprobadas)
         
-        # Abrir explorador
-        try:
-            subprocess.run(['explorer', '/select,', str(output_path.absolute())], check=False)
-        except:
-            pass
-        
-        # Limpiar
+        # Limpiar archivos temporales
         try:
             os.remove(filepath)
             os.remove(session_file)
         except:
             pass
         
-        # Página de éxito
-        return f"""
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <title>Corrección Completada</title>
-            <style>
-                body {{
-                    font-family: 'Segoe UI', sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 20px;
-                }}
-                .success-box {{
-                    background: white;
-                    border-radius: 20px;
-                    padding: 40px;
-                    max-width: 600px;
-                    text-align: center;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                }}
-                .check {{ font-size: 80px; color: #28a745; margin-bottom: 20px; }}
-                h1 {{ color: #333; margin-bottom: 20px; }}
-                .file-path {{
-                    background: #f5f5f5;
-                    padding: 15px;
-                    border-radius: 10px;
-                    margin: 20px 0;
-                    font-family: monospace;
-                    color: #667eea;
-                    font-weight: bold;
-                }}
-                .btn {{
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 15px 40px;
-                    border: none;
-                    border-radius: 30px;
-                    font-size: 1.1em;
-                    cursor: pointer;
-                    text-decoration: none;
-                    display: inline-block;
-                    margin-top: 20px;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="success-box">
-                <div class="check">✅</div>
-                <h1>¡Correcciones Aplicadas!</h1>
-                <p>Se aplicaron {len(correcciones_aprobadas)} correcciones con Track Changes en verde.</p>
-                
-                <div class="file-path">
-                    📄 {output_filename}
-                </div>
-                
-                <p><strong>Ubicación:</strong><br>{output_path.parent.absolute()}</p>
-                
-                <div style="color: #666; margin-top: 20px; font-size: 0.9em;">
-                    El explorador se abrió automáticamente.<br>
-                    Las correcciones aprobadas aparecen en <strong style="color: #0000FF;">azul</strong> en Word.
-                </div>
-                
-                <a href="/" class="btn">Corregir Otro Documento</a>
-            </div>
-        </body>
-        </html>
-        """
+        # Descargar archivo directamente al PC del usuario
+        return send_file(
+            str(output_path.absolute()),
+            as_attachment=True,
+            download_name=output_filename,
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
     
     except Exception as e:
         print(f"❌ Error: {str(e)}")

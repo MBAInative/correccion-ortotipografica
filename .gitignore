@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Carpetas de datos temporales
+uploads/
+outputs/
+sessions/
+*.pkl
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Modelos descargados (muy pesados)
+es_core_news_sm*/
+es_core_news_md*/
+es_core_news_lg*/

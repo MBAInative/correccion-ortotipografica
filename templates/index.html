@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrector Ortotipográfico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f1ff;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            width: 100%;
+            font-size: 1.1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-name {
+            margin-top: 15px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .features {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .features h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .feature-category {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-category h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        .features ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .features li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .features strong {
+            color: #667eea;
+        }
+
+        /* Botón de Ayuda */
+        .help-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .help-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 25px;
+            top: 15px;
+            font-size: 2em;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #667eea;
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+        }
+
+        .help-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .help-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .help-section p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .help-section ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .help-section li {
+            margin: 8px 0;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📝 Corrector Ortotipográfico</h1>
+        <p class="subtitle">Corrección profesional según normativa RAE con revisión interactiva</p>
+
+        <button class="help-btn" onclick="openHelp()">❓ Ayuda</button>
+
+        <!-- Modal de Ayuda -->
+        <div id="helpModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeHelp()">&times;</span>
+                <h2>📚 Corrector Ortotipográfico RAE Completo</h2>
+
+                <div class="help-section">
+                    <h3>1️⃣ Subir documento</h3>
+                    <p>Arrastra o selecciona tu archivo <strong>.docx</strong>. El sistema analizará con <strong>16
+                            categorías</strong> de corrección RAE.</p>
+                </div>
+
+                <div class="help-section">
+                    <h3>2️⃣ Categorías de corrección</h3>
+                    <p><strong>Ortografía:</strong> LanguageTool para errores tipográficos</p>
+                    <p><strong>Ortotipografía RAE:</strong></p>
+                    <ul>
+                        <li>Comillas (jerarquía « » > " " > ' ')</li>
+                        <li>Rayas y guiones con espaciado</li>
+                        <li>Espacios duros antes de unidades</li>
+                        <li>Mayúsculas (días/meses en minúscula)</li>
+                        <li>Abreviaturas con punto</li>
+                        <li>Siglas sin puntos internos</li>
+                        <li>Números (coma decimal)</li>
+                        <li>Puntuación (comas adversativas)</li>
+                        <li>Extranjerismos</li>
+                    </ul>
+                    <p><strong>Estilo:</strong></p>
+                    <ul>
+                        <li>Voz pasiva</li>
+                        <li>Gerundios incorrectos</li>
+                        <li>Queísmo / Dequeísmo</li>
+                        <li>Laísmo / Loísmo</li>
+                        <li>Cosismo</li>
+                        <li>Redundancias (30+ patrones)</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>3️⃣ Revisar y aprobar</h3>
+                    <p>Revisa cada corrección y usa <strong>Aprobar/Rechazar todas</strong> por categoría o selecciona
+                        individualmente.</p>
+                </div>
+
+                <div class="help-section">
+                    <h3>4️⃣ Aplicar y descargar</h3>
+                    <p>Las correcciones aparecen en <strong style="color: #0000FF;">azul</strong> como Track Changes,
+                        conservando la fuente original. Revisa en Word con <strong>Revisar → Aceptar</strong>.</p>
+                </div>
+            </div>
+        </div>
+
+        <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p style="margin-top: 15px; color: #667eea; font-weight: 600;">
+                    Click para seleccionar archivo .docx
+                </p>
+                <p style="margin-top: 5px; color: #999; font-size: 0.9em;">
+                    o arrastra el archivo aquí
+                </p>
+                <input type="file" id="fileInput" name="file" class="file-input" accept=".docx" required
+                    onchange="showFileName(this)">
+            </div>
+
+            <div id="fileName" class="file-name" style="display: none;"></div>
+
+            <button type="submit" class="submit-btn" id="submitBtn" disabled onclick="showLoading()">
+                Analizar y Revisar Correcciones
+            </button>
+
+            <!-- Indicador de carga -->
+            <div id="loadingOverlay"
+                style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+                <div
+                    style="width: 60px; height: 60px; border: 5px solid #f3f3f3; border-top: 5px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;">
+                </div>
+                <p style="margin-top: 20px; font-size: 1.2em; color: #667eea; font-weight: 600;">Analizando documento...
+                </p>
+                <p style="color: #888; font-size: 0.9em;">Esto puede tardar unos segundos</p>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% {
+                        transform: rotate(0deg);
+                    }
+
+                    100% {
+                        transform: rotate(360deg);
+                    }
+                }
+            </style>
+        </form>
+
+        <div class="features">
+            <h2>🔍 Correcciones Detectadas (RAE Completo)</h2>
+
+            <div class="feature-category">
+                <h3>📝 Ortografía</h3>
+                <ul>
+                    <li><strong>LanguageTool</strong>: Errores tipográficos y palabras mal escritas</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📖 Ortotipografía RAE</h3>
+                <ul>
+                    <li><strong>Comillas</strong>: Jerarquía « » > " " > ' '</li>
+                    <li><strong>Rayas</strong>: Espaciado correcto en incisos y diálogos</li>
+                    <li><strong>Espacios duros</strong>: Antes de %, km, kg, €, etc.</li>
+                    <li><strong>Mayúsculas</strong>: Días/meses/estaciones en minúscula</li>
+                    <li><strong>Abreviaturas</strong>: Sr., Dr., pág., etc. con punto</li>
+                    <li><strong>Siglas</strong>: ONU (no O.N.U.), EE. UU.</li>
+                    <li><strong>Números</strong>: Coma decimal (3,14), formato de horas</li>
+                    <li><strong>Puntuación</strong>: Coma antes de pero, aunque, sino</li>
+                    <li><strong>Extranjerismos</strong>: Alternativas españolas o cursiva</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>✍️ Estilo</h3>
+                <ul>
+                    <li><strong>Voz pasiva</strong>: "fue revisado" → sugerencia de voz activa</li>
+                    <li><strong>Gerundios</strong>: Posterioridad, resultado (incorrectos)</li>
+                    <li><strong>Queísmo</strong>: "me alegro que" → "me alegro de que"</li>
+                    <li><strong>Dequeísmo</strong>: "creo de que" → "creo que"</li>
+                    <li><strong>Laísmo</strong>: "la dije" → "le dije"</li>
+                    <li><strong>Loísmo</strong>: "lo dije" → "le dije" (obj. indirecto)</li>
+                    <li><strong>Cosismo</strong>: "cosa" → alternativas específicas</li>
+                    <li><strong>Redundancias</strong>: 30+ pleonasmos detectados</li>
+                </ul>
+            </div>
+        </div>
+
+        <footer
+            style="text-align: center; padding: 30px; margin-top: 40px; color: #888; font-size: 0.9em; border-top: 1px solid #eee;">
+            <p>Copyright © 2025. Versión 0.0</p>
+            <p>Luis Benedicto Tuzón <em>vibe coding</em> con Claude Opus 4.5 Thinking</p>
+        </footer>
+    </div>
+
+    <script>
+        function showFileName(input) {
+            const fileNameDiv = document.getElementById('fileName');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (input.files && input.files[0]) {
+                fileNameDiv.textContent = '📄 ' + input.files[0].name;
+                fileNameDiv.style.display = 'block';
+                submitBtn.disabled = false;
+            } else {
+                fileNameDiv.style.display = 'none';
+                submitBtn.disabled = true;
+            }
+        }
+
+        // Drag and drop
+        const uploadArea = document.querySelector('.upload-area');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.style.borderColor = '#764ba2';
+                uploadArea.style.background = '#f0f1ff';
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.style.borderColor = '#667eea';
+                uploadArea.style.background = '#f8f9ff';
+            });
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            document.getElementById('fileInput').files = files;
+            showFileName(document.getElementById('fileInput'));
+        });
+
+        // Funciones del modal de ayuda
+        function openHelp() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function (event) {
+            const modal = document.getElementById('helpModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Cerrar modal con tecla Escape
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeHelp();
+            }
+        });
+
+        // Mostrar indicador de carga
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+    </script>
+
+</body>
+
+</html>

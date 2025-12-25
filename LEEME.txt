@@ -1,0 +1,70 @@
+╔═══════════════════════════════════════════════════════════════╗
+║     CORRECTOR ORTOTIPOGRÁFICO RAE - GUÍA DE INSTALACIÓN       ║
+║     Copyright © 2025 - Luis Benedicto Tuzón                   ║
+╚═══════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════
+ REQUISITOS
+═══════════════════════════════════════════════════════════════
+
+ • Windows 10/11
+ • Python 3.9 o superior
+   → Descarga: https://www.python.org/downloads/
+   → ¡IMPORTANTE! Marca "Add Python to PATH" al instalar
+
+═══════════════════════════════════════════════════════════════
+ INSTALACIÓN (solo la primera vez)
+═══════════════════════════════════════════════════════════════
+
+ 1. Descomprime esta carpeta donde quieras
+ 2. Doble clic en: INSTALAR.bat
+ 3. Espera a que termine (puede tardar 5-10 minutos)
+ 4. ¡Listo!
+
+═══════════════════════════════════════════════════════════════
+ USO DIARIO
+═══════════════════════════════════════════════════════════════
+
+ 1. Doble clic en: INICIAR.bat
+ 2. Abre tu navegador en: http://localhost:5000
+ 3. Sube tu documento .docx
+ 4. Revisa las correcciones por categoría
+ 5. Aprueba/rechaza y descarga el documento corregido
+
+═══════════════════════════════════════════════════════════════
+ 16 CATEGORÍAS DE CORRECCIÓN RAE
+═══════════════════════════════════════════════════════════════
+
+ ORTOGRAFÍA
+ • Errores tipográficos
+
+ ORTOTIPOGRAFÍA
+ • Jerarquía de comillas (« » > " " > ' ')
+ • Rayas con espaciado correcto
+ • Mayúsculas incorrectas (días, meses, estaciones)
+ • Abreviaturas con punto (Sr., etc.)
+ • Siglas sin puntos (ONU, EE. UU.)
+ • Formato de números (coma decimal)
+ • Puntuación (coma antes de "pero")
+ • Extranjerismos
+
+ ESTILO
+ • Voz pasiva
+ • Gerundios incorrectos
+ • Queísmo
+ • Dequeísmo
+ • Laísmo
+ • Loísmo
+ • Cosismo
+ • Redundancias
+
+═══════════════════════════════════════════════════════════════
+ CERRAR EL PROGRAMA
+═══════════════════════════════════════════════════════════════
+
+ • Cierra la ventana negra de comandos, o
+ • Presiona Ctrl+C en esa ventana
+
+═══════════════════════════════════════════════════════════════
+
+ Desarrollado con Claude Opus 4.5 Thinking (vibe coding)

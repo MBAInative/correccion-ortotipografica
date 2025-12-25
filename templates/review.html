@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revisión de Correcciones</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .category-section {
+            background: white;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .category-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .category-header:hover {
+            background: #5568d3;
+        }
+
+        .category-title {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .category-count {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .category-actions {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-approve-all {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-approve-all:hover {
+            background: #218838;
+        }
+
+        .btn-reject-all {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-reject-all:hover {
+            background: #c82333;
+        }
+
+        .corrections-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .corrections-list.open {
+            max-height: 2000px;
+        }
+
+        .correction-item {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .correction-item:last-child {
+            border-bottom: none;
+        }
+
+        .correction-checkbox {
+            margin-top: 5px;
+        }
+
+        .correction-checkbox input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .correction-content {
+            flex: 1;
+        }
+
+        .correction-text {
+            margin: 10px 0;
+        }
+
+        .text-original {
+            color: #dc3545;
+            text-decoration: line-through;
+            font-weight: 500;
+        }
+
+        .text-nuevo {
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .correction-context {
+            font-size: 0.9em;
+            color: #6c757d;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        .correction-explanation {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .action-bar {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 10px 10px 0 0;
+            margin-top: 30px;
+        }
+
+        .btn-apply {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-apply:hover {
+            transform: scale(1.05);
+        }
+
+        .selected-count {
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>📝 Revisión de Correcciones</h1>
+        <p>Revisa y aprueba las correcciones detectadas</p>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_correcciones }}</div>
+                <div>Total detectadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="selectedCount">0</div>
+                <div>Seleccionadas</div>
+            </div>
+        </div>
+    </div>
+
+    {% for categoria, datos in correcciones_por_categoria.items() %}
+    {% if datos['correcciones'] %}
+    <div class="category-section">
+        <div class="category-header" onclick="toggleCategory('{{ categoria }}')">
+            <span class="category-title">{{ datos['nombre'] }}</span>
+            <span class="category-count">{{ datos['correcciones']|length }} correcciones</span>
+        </div>
+
+        <div class="category-actions">
+            <button class="btn btn-approve-all" onclick="approveAll('{{ categoria }}')">
+                ✓ Aprobar todas
+            </button>
+            <button class="btn btn-reject-all" onclick="rejectAll('{{ categoria }}')">
+                ✗ Rechazar todas
+            </button>
+        </div>
+
+        <div class="corrections-list" id="list-{{ categoria }}">
+            {% for corr in datos['correcciones'] %}
+            <div class="correction-item">
+                <div class="correction-checkbox">
+                    <input type="checkbox" id="corr-{{ corr.id }}" name="corrections" value="{{ corr.id }}"
+                        onchange="updateCount()">
+                </div>
+                <div class="correction-content">
+                    <div class="correction-text">
+                        <span class="text-original">{{ corr.texto_original }}</span>
+                        →
+                        <span class="text-nuevo">{{ corr.texto_nuevo }}</span>
+                    </div>
+                    <div class="correction-context">
+                        Contexto: "{{ corr.contexto }}"
+                    </div>
+                    <div class="correction-explanation">
+                        {{ corr.explicacion }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <div class="action-bar">
+        <div class="selected-count">
+            <span id="selectedCountBottom">0</span> correcciones seleccionadas
+        </div>
+        <button class="btn-apply" onclick="applyCorrections()">
+            Aplicar Correcciones Seleccionadas
+        </button>
+    </div>
+
+    <form id="applyForm" method="POST" action="/apply_corrections" style="display: none;">
+        <input type="hidden" name="session_id" value="{{ session_id }}">
+        <input type="hidden" name="selected_ids" id="selectedIds">
+    </form>
+
+    <script>
+        function toggleCategory(categoria) {
+            const list = document.getElementById('list-' + categoria);
+            list.classList.toggle('open');
+        }
+
+        function approveAll(categoria) {
+            const list = document.getElementById('list-' + categoria);
+            const checkboxes = list.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = true);
+            updateCount();
+        }
+
+        function rejectAll(categoria) {
+            const list = document.getElementById('list-' + categoria);
+            const checkboxes = list.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            updateCount();
+        }
+
+        function updateCount() {
+            const checked = document.querySelectorAll('input[name="corrections"]:checked');
+            const count = checked.length;
+            document.getElementById('selectedCount').textContent = count;
+            document.getElementById('selectedCountBottom').textContent = count;
+        }
+
+        function applyCorrections() {
+            const checked = document.querySelectorAll('input[name="corrections"]:checked');
+            const ids = Array.from(checked).map(cb => cb.value);
+
+            if (ids.length === 0) {
+                alert('Por favor selecciona al menos una corrección');
+                return;
+            }
+
+            document.getElementById('selectedIds').value = JSON.stringify(ids);
+            document.getElementById('applyForm').submit();
+        }
+
+        // Abrir primera categoría por defecto
+        document.addEventListener('DOMContentLoaded', () => {
+            const firstList = document.querySelector('.corrections-list');
+            if (firstList) firstList.classList.add('open');
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,5 @@
+# Fase 2: Versión Profesional - Adicionales
+spacy>=3.7.0
+
+# Modelo de SpaCy para español (se instala por separado)
+# python -m spacy download es_core_news_lg

@@ -2,7 +2,7 @@
 Web App para corrección ortotipográfica con revisión interactiva.
 Nuevo flujo: Analizar → Revisar → Aplicar aprobadas
 """
-from flask import Flask, render_template, request, send_file, redirect, url_for, session
+from flask import Flask, render_template, request, send_file, redirect, url_for, session, make_response
 from werkzeug.utils import secure_filename
 import os
 from pathlib import Path
@@ -214,12 +214,21 @@ def apply_corrections():
             pass
         
         # Descargar archivo directamente al PC del usuario
-        return send_file(
+        # Usar nombre simple sin caracteres especiales para evitar problemas
+        safe_filename = output_filename.encode('ascii', 'ignore').decode('ascii')
+        if not safe_filename:
+            safe_filename = 'documento_corregido.docx'
+        
+        response = make_response(send_file(
             str(output_path.absolute()),
-            as_attachment=True,
-            download_name=output_filename,
             mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
+        ))
+        
+        # Configurar header de descarga con nombre correcto
+        response.headers['Content-Disposition'] = f'attachment; filename="{safe_filename}"; filename*=UTF-8\'\'\'{output_filename}'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        
+        return response
     
     except Exception as e:
         print(f"❌ Error: {str(e)}")

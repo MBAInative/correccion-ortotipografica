@@ -13,18 +13,31 @@ class SpellingChecker:
     
     def __init__(self, dict_path='es_full.txt'):
         """
-        Inicializa el diccionario combinando pyspellchecker y archivos locales masivos.
+        Inicializa el detector.
+        NOTA: La carga del diccionario se retrasa hasta el primer uso (Lazy Loading)
+        para evitar timeouts al arrancar la aplicación web en el servidor.
         """
         self.habilitado = False
         self.custom_words: Set[str] = set()
         self.spell = None
+        self._diccionario_cargado = False
+        self.dict_path_backup = dict_path
         
-        print("⏳ Inicializando sistema ortográfico avanzado...")
+        print("⏳ SpellingChecker inicializado (carga diferida)")
+
+    def _cargar_diccionario_si_necesario(self):
+        """Carga los diccionarios solo si no están cargados aún."""
+        if self._diccionario_cargado:
+            return
+
+        print("⏳ Iniciando carga de diccionarios (Lazy Load)...")
+        base_dir = os.path.dirname(os.path.abspath(__file__))
         
         try:
-            # 1. Cargar "es_frecuencias.txt" (Massive corpus ~1.2M words)
-            # Formato: "palabra frecuencia"
-            frec_path = 'es_frecuencias.txt'
+            # 1. Cargar "es_frecuencias.txt" (Corpus masivo)
+            # Usamos ruta absoluta para evitar errores en Hostinger/Passenger
+            frec_path = os.path.join(base_dir, 'es_frecuencias.txt')
+            
             if os.path.exists(frec_path):
                 print(f"   Cargando corpus masivo: {frec_path} ...")
                 try:
@@ -35,26 +48,28 @@ class SpellingChecker:
                             parts = line.split()
                             if parts:
                                 word = parts[0].lower()
-                                # Filtrar basura (números, símbolos)
                                 if word.replace('.', '').replace('-', '').isalpha():
                                     self.custom_words.add(word)
                                     count += 1
                         print(f"   ✓ Corpus cargado: {count} formas")
                 except Exception as e:
                     print(f"⚠️ Error leyendo corpus: {e}")
+            else:
+                print(f"⚠️ No se encontró corpus en: {frec_path}")
 
-            # 2. Cargar diccionario local simple (backup/normativo)
-            if os.path.exists(dict_path):
-                print(f"   Cargando diccionario local: {dict_path}")
+            # 2. Cargar diccionario local de respaldo (es_full.txt)
+            backup_path = os.path.join(base_dir, self.dict_path_backup)
+            if os.path.exists(backup_path):
+                print(f"   Cargando respaldo: {backup_path}")
                 try:
-                    with open(dict_path, 'r', encoding='utf-8') as f:
+                    with open(backup_path, 'r', encoding='utf-8') as f:
                         for line in f:
                             if line.strip():
                                 self.custom_words.add(line.strip().lower())
                 except Exception as e:
-                    print(f"⚠️ Error leyendo diccionario local: {e}")
+                    print(f"⚠️ Error leyendo respaldo: {e}")
             
-            # 1.5. Añadir palabras comunes (Stopwords) para evitar fallos tontos
+            # 1.5. Añadir palabras comunes (Stopwords)
             palabras_comunes = {
                 'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',
                 'y', 'e', 'o', 'u', 'pero', 'aunque', 'sin', 'con', 'de', 'del', 'al',
@@ -77,52 +92,101 @@ class SpellingChecker:
                 'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'esos', 'esas', 'aquel', 'aquella',
                 'aquellos', 'aquellas', 'esto', 'eso', 'aquello',
                 'porque', 'pues', 'si', 'tan', 'tanto',
-                'neomarxismo', 'neoliberalismo', 'globalismo', 'identitario', 'identitarios' # Añadidos por reporte usuario
+                'neomarxismo', 'neoliberalismo', 'globalismo', 'identitario', 'identitarios'
             }
             self.custom_words.update(palabras_comunes)
 
-            # 3. Inicializar pyspellchecker (para sugerencias)
+            # 3. Inicializar pyspellchecker
             self.spell = SpellChecker(language='es')
-            # Añadir palabras del spellchecker al set (lemas base)
             self.custom_words.update(self.spell.word_frequency.dictionary.keys())
             
             self.habilitado = True
-            print(f"✓ Sistema listo. Total formas únicas: {len(self.custom_words)}")
+            self._diccionario_cargado = True
+            print(f"✓ Diccionario TOTAL cargado: {len(self.custom_words)} formas")
             
         except Exception as e:
-            print(f"⚠️ Error crítico en diccionario: {e}")
+            print(f"⚠️ Error crítico cargando diccionario: {e}")
             self.spell = None
+            self.habilitado = False
+            # Marcar como intentado para no reintentar infinitamente si falla
+            self._diccionario_cargado = True
 
     def _es_palabra_valida(self, palabra: str) -> bool:
         """
         Verifica si una palabra es válida usando diccionario masivo.
-        Al tener 1.2M de formas, las heurísticas son innecesarias y peligrosas.
         """
+        # Asegurar carga
+        self._cargar_diccionario_si_necesario()
+        
         p = palabra.lower()
         
-        # 1. Búsqueda directa (O(1)) - Cubre plurales y conjugaciones gracias al corpus
+        # 1. Búsqueda directa (O(1))
         if p in self.custom_words:
             return True
 
-        # Enclíticos simples (dímelo, comprarlo) - Estos SÍ merecen conservarse
-        # porque el corpus podría no tener todas las combinaciones verbo+pronombre
+        # Enclíticos simples
         for sufijo in ['lo', 'la', 'los', 'las', 'me', 'te', 'se', 'nos', 'le', 'les']:
             if p.endswith(sufijo):
                 raiz = p[:-len(sufijo)]
                 if raiz in self.custom_words:
-                    # Validar que la raiz sea verbo (difícil sin POS tagger)
-                    # Pero si 'amar' está y tenemos 'amarlo', es seguro.
-                    # Riesgo: 'palo' -> 'pa' (no verbo).
-                    # Filtro: raiz debe terminar en r, s, n, vocal acentuada...
-                    # Simplificación: aceptar si la raíz es larga (>3 chars) y existe.
                     if len(raiz) > 3:
                         return True
-                
-                # Caso infinitivo+pronombre: amar + lo -> amarlo (raiz=amar) -> OK
-                # Caso gerundio+pronombre: amando + lo -> amándolo (raiz=amándo -> amando)
-                # Esto requeriría quitar tilde. Complejo.
-        
         return False
+
+    def detectar_errores(self, texto: str, max_errores: int = 50) -> List[Tuple[str, str, str]]:
+        """
+        Detecta errores ortográficos palabra por palabra.
+        """
+        if not texto.strip():
+            return []
+            
+        # Asegurar carga del diccionario antes de procesar
+        self._cargar_diccionario_si_necesario()
+        
+        if not self.habilitado:
+            return []
+            
+        resultados = []
+        
+        # Tokenizar texto
+        palabras_encontradas = re.finditer(r'\b([a-záéíóúñü]+)\b', texto, re.IGNORECASE)
+        
+        errores_count = 0
+        palabras_verificadas = set()
+        
+        for match in palabras_encontradas:
+            if errores_count >= max_errores:
+                break
+                
+            palabra = match.group(1)
+            
+            if not palabra[0].islower():
+                continue
+                
+            p_lower = palabra.lower()
+            if p_lower in palabras_verificadas:
+                continue
+                
+            if self._es_palabra_valida(p_lower):
+                palabras_verificadas.add(p_lower)
+                continue
+                
+            # Error confirmado
+            correccion = self.spell.correction(p_lower)
+            if not correccion or correccion == p_lower:
+                sugerencia = "(sin sugerencia)"
+            else:
+                sugerencia = correccion
+                
+            resultados.append((
+                palabra,
+                sugerencia,
+                f"Ortografía: '{palabra}' no encontrada"
+            ))
+            errores_count += 1
+            palabras_verificadas.add(p_lower)
+                    
+        return resultados
 
     def detectar_errores(self, texto: str, max_errores: int = 50) -> List[Tuple[str, str, str]]:
         """

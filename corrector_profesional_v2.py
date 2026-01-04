@@ -3,6 +3,7 @@ Versión mejorada del corrector profesional con mejor manejo de XML.
 """
 from xml_handler import DocxXMLHandler, TrackChangesHandler, NAMESPACES
 from ortotipografia import OrtotipografiaRules
+from spellchecker import SpellChecker
 from lxml import etree
 from typing import List, Tuple, Dict
 import re
@@ -27,12 +28,62 @@ class ProfessionalCorrectorV2:
     def __init__(self, autor: str = "Antigravity Corrector"):
         self.autor = autor
         self.ortotipo = OrtotipografiaRules()
+        try:
+            print("⏳ Inicializando diccionario (pyspellchecker)...")
+            self.spell = SpellChecker(language='es')
+            print("✓ Diccionario listo")
+        except Exception as e:
+            print(f"⚠️ Error cargando diccionario: {e}")
+            self.spell = None
+
         self.stats = {
             'correcciones_totales': 0,
             'parrafos_procesados': 0,
             'parrafos_modificados': 0
         }
     
+    def corregir_ortografia(self, texto: str) -> str:
+        """
+        Corrige ortografía palabra por palabra usando diccionario.
+        Ignora palabras que empiezan con mayúscula (asume nombres propios).
+        """
+        if not self.spell:
+            return texto
+            
+        # Tokenizar manteniendo delimitadores para reconstruir
+        # \b no sirve bien aquí porque queremos separar signos de puntuación
+        # Dividimos por caracteres que no sean letras
+        tokens = re.split(r'([^\w\u00C0-\u017F]+)', texto)
+        
+        texto_corregido = []
+        
+        for token in tokens:
+            # Si no es palabra o está vacía, añadir tal cual
+            if not token or not token.isalpha():
+                texto_corregido.append(token)
+                continue
+                
+            # Criterio: Solo corregir palabras en minúscula (no nombres propios)
+            # Esto cumple el requisito: "revisar cada palabra que no sea nombre propio"
+            if token[0].islower():
+                # Verificar si está en el diccionario
+                # unknown() devuelve un set de palabras desconocidas
+                if token.lower() in self.spell.unknown([token.lower()]):
+                    # Obtener corrección
+                    correccion = self.spell.correction(token.lower())
+                    if correccion and correccion != token.lower():
+                        # Mantener casing original si fuera necesario (aquí es lowercase)
+                        texto_corregido.append(correccion)
+                    else:
+                        texto_corregido.append(token)
+                else:
+                    texto_corregido.append(token)
+            else:
+                # Es mayúscula/Nombre propio - dejar tal cual
+                texto_corregido.append(token)
+                
+        return "".join(texto_corregido)
+
     def detectar_y_corregir_texto(self, texto: str) -> Tuple[str, int]:
         """
         Detecta y aplica correcciones a un texto.
@@ -41,8 +92,11 @@ class ProfessionalCorrectorV2:
         texto_original = texto
         cambios = 0
         
-        # Aplicar correcciones de ortotipografía
-        texto_corregido = self.ortotipo.aplicar_todas(texto)
+        # 1. Aplicar correcciones de ortotipografía (incluye espacios múltiples)
+        texto_temp = self.ortotipo.aplicar_todas(texto)
+        
+        # 2. Aplicar corrección ortográfica (diccionario)
+        texto_corregido = self.corregir_ortografia(texto_temp)
         
         if texto_corregido != texto_original:
             cambios = 1

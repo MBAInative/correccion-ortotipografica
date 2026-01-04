@@ -151,6 +151,18 @@ class OrtotipografiaRules:
                       f'\\1{self.ESPACIO_DURO}\\2', texto, flags=re.IGNORECASE)
         
         return texto
+
+    def corregir_espacios_multiples(self, texto: str) -> str:
+        """
+        Corrige espacios múltiples (dos o más) por un espacio simple.
+        
+        Args:
+            texto: Texto a corregir
+            
+        Returns:
+            Texto con espacios corregidos
+        """
+        return re.sub(r'[ ]{2,}', ' ', texto)
     
     def aplicar_todas(self, texto: str) -> str:
         """
@@ -168,6 +180,7 @@ class OrtotipografiaRules:
         texto = self.corregir_rayas_dialogos(texto)
         texto = self.corregir_rayas_incisos(texto)
         texto = self.corregir_espacios_duros(texto)
+        texto = self.corregir_espacios_multiples(texto)
         
         return texto
 

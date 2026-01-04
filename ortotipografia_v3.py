@@ -182,6 +182,18 @@ class OrtotipografiaRulesV3:
                 cambios += 1
         
         return resultado, cambios
+
+    # ═══════════════════════════════════════════════════════════════
+    # ESPACIOS MÚLTIPLES
+    # ═══════════════════════════════════════════════════════════════
+    def corregir_espacios_multiples(self, texto: str) -> Tuple[str, int]:
+        """Corrige espacios múltiples (dos o más) por un espacio simple."""
+        if '  ' not in texto:
+            return texto, 0
+            
+        nuevo_texto = re.sub(r'[ ]{2,}', ' ', texto)
+        cambios = 1 if nuevo_texto != texto else 0
+        return nuevo_texto, cambios
     
     # ═══════════════════════════════════════════════════════════════
     # MAYÚSCULAS INCORRECTAS (con detección de nombres propios)
@@ -386,6 +398,7 @@ class OrtotipografiaRulesV3:
         resultado, _ = self.corregir_comillas_jerarquia(resultado)
         resultado, _ = self.corregir_rayas_espaciado(resultado)
         resultado, _ = self.corregir_espacios_duros(resultado)
+        resultado, _ = self.corregir_espacios_multiples(resultado)
         resultado, _ = self.corregir_mayusculas(resultado)
         resultado, _ = self.corregir_abreviaturas(resultado)
         resultado, _ = self.corregir_siglas(resultado)

@@ -116,6 +116,22 @@ class CorrectorIntegrado:
                 contexto=contexto,
                 parrafo_num=parrafo_num
             ))
+            
+        # 3b. Espacios múltiples (Detección individual con contexto)
+        for match in re.finditer(r'(\S+)(\s{2,})(\S+)', texto):
+            texto_error = match.group(0) # "palabra1  palabra2"
+            texto_corregido = f"{match.group(1)} {match.group(3)}" # "palabra1 palabra2"
+            
+            correcciones.append(Correccion(
+                categoria='ortotipografia',
+                tipo='reemplazo',
+                texto_original=texto_error,
+                texto_nuevo=texto_corregido,
+                explicacion=f'Espacio múltiple detectado entre "{match.group(1)}" y "{match.group(3)}"',
+                confianza=0.99,
+                contexto=contexto,
+                parrafo_num=parrafo_num
+            ))
         
         # 4. Mayúsculas
         texto_mayus, cambios_mayus = self.ortotipo.corregir_mayusculas(texto)

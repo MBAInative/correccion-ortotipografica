@@ -3,7 +3,7 @@ Versión mejorada del corrector profesional con mejor manejo de XML.
 """
 from xml_handler import DocxXMLHandler, TrackChangesHandler, NAMESPACES
 from ortotipografia import OrtotipografiaRules
-from spellchecker import SpellChecker
+from spelling_checker import SpellingChecker
 from lxml import etree
 from typing import List, Tuple, Dict
 import re
@@ -29,9 +29,9 @@ class ProfessionalCorrectorV2:
         self.autor = autor
         self.ortotipo = OrtotipografiaRules()
         try:
-            print("⏳ Inicializando diccionario (pyspellchecker)...")
-            self.spell = SpellChecker(language='es')
-            print("✓ Diccionario listo")
+            print("⏳ Inicializando diccionario (Custom SpellingChecker)...")
+            self.spell = SpellingChecker() # Usa nuestra clase con corpus masivo
+            print("✓ Diccionario asignado (Lazy Load)")
         except Exception as e:
             print(f"⚠️ Error cargando diccionario: {e}")
             self.spell = None
@@ -49,6 +49,10 @@ class ProfessionalCorrectorV2:
         """
         if not self.spell:
             return texto
+        
+        # Asegurar carga del diccionario si no se ha hecho
+        if hasattr(self.spell, '_cargar_diccionario_si_necesario'):
+            self.spell._cargar_diccionario_si_necesario()
             
         # Tokenizar manteniendo delimitadores para reconstruir
         # \b no sirve bien aquí porque queremos separar signos de puntuación
@@ -64,22 +68,18 @@ class ProfessionalCorrectorV2:
                 continue
                 
             # Criterio: Solo corregir palabras en minúscula (no nombres propios)
-            # Esto cumple el requisito: "revisar cada palabra que no sea nombre propio"
             if token[0].islower():
-                # Verificar si está en el diccionario
-                # unknown() devuelve un set de palabras desconocidas
-                if token.lower() in self.spell.unknown([token.lower()]):
-                    # Obtener corrección
-                    correccion = self.spell.correction(token.lower())
+                # Verificar si es válida usando nuestro método robusto
+                if not self.spell._es_palabra_valida(token):
+                    # Es un error, buscar corrección
+                    correccion = self.spell.spell.correction(token.lower())
                     if correccion and correccion != token.lower():
-                        # Mantener casing original si fuera necesario (aquí es lowercase)
                         texto_corregido.append(correccion)
                     else:
                         texto_corregido.append(token)
                 else:
                     texto_corregido.append(token)
             else:
-                # Es mayúscula/Nombre propio - dejar tal cual
                 texto_corregido.append(token)
                 
         return "".join(texto_corregido)

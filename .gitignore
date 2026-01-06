@@ -16,6 +16,7 @@ uploads/
 outputs/
 sessions/
 *.pkl
+temp_streamlit/
 
 # IDEs
 .vscode/

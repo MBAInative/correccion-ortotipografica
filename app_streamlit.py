@@ -177,23 +177,24 @@ if 'correcciones_por_cat' in st.session_state:
         
         st.markdown("---")
         
-        # --- LISTA DETALLADA CON PESTAÑAS (GRUPOS) ---
+        # --- LISTA DETALLADA CON SELECTOR (GRUPOS) ---
         st.markdown("## 🔍 Revisión Detallada")
         
-        # Crear pestañas para cada categoría activa
+        # Crear un selector para cada categoría activa
         cat_ids = list(cat_activas.keys())
-        categorias_nombres = [corrector.CATEGORIAS.get(cat_id, cat_id) for cat_id in cat_ids]
-        tabs = st.tabs([f"📂 {nombre}" for nombre in categorias_nombres])
+        cat_labels = {cat_id: f"{corrector.CATEGORIAS.get(cat_id, cat_id)} ({cat_activas[cat_id]})" for cat_id in cat_ids}
         
-        for i, cat_id in enumerate(cat_ids):
-            corrs = st.session_state['correcciones_por_cat'].get(cat_id, [])
-            if not corrs:
-                continue
-                
-            with tabs[i]:
-                st.markdown(f"### {corrector.CATEGORIAS.get(cat_id, cat_id)} ({len(corrs)} detecciones)")
-                
-                for idx, c in enumerate(corrs):
+        cat_seleccionada = st.selectbox(
+            "Selecciona el grupo de errores a revisar:",
+            options=cat_ids,
+            format_func=lambda x: cat_labels[x]
+        )
+        
+        corrs = st.session_state['correcciones_por_cat'].get(cat_seleccionada, [])
+        if corrs:
+            st.markdown(f"### {corrector.CATEGORIAS.get(cat_seleccionada, cat_seleccionada)}")
+            
+            for idx, c in enumerate(corrs):
                     # Generar HTML con colores
                     html_old, html_new = get_diff_html(c.texto_original, c.texto_nuevo)
                     

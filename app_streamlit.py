@@ -177,15 +177,21 @@ if 'correcciones_por_cat' in st.session_state:
         
         st.markdown("---")
         
-        # --- LISTA DETALLADA CON COLORES ---
+        # --- LISTA DETALLADA CON PESTAÑAS (GRUPOS) ---
         st.markdown("## 🔍 Revisión Detallada")
         
-        for cat_id, corrs in st.session_state['correcciones_por_cat'].items():
+        # Crear pestañas para cada categoría activa
+        cat_ids = list(cat_activas.keys())
+        categorias_nombres = [corrector.CATEGORIAS.get(cat_id, cat_id) for cat_id in cat_ids]
+        tabs = st.tabs([f"📂 {nombre}" for nombre in categorias_nombres])
+        
+        for i, cat_id in enumerate(cat_ids):
+            corrs = st.session_state['correcciones_por_cat'].get(cat_id, [])
             if not corrs:
                 continue
                 
-            nombre_cat = corrector.CATEGORIAS.get(cat_id, cat_id)
-            with st.expander(f"📂 {nombre_cat} ({len(corrs)} detecciones)", expanded=True):
+            with tabs[i]:
+                st.markdown(f"### {corrector.CATEGORIAS.get(cat_id, cat_id)} ({len(corrs)} detecciones)")
                 
                 for idx, c in enumerate(corrs):
                     # Generar HTML con colores
